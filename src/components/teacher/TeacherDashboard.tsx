@@ -14,7 +14,7 @@ import type { ClassRecord } from '../../types/class';
 import type { SortField, SortDir } from '../../types/teacher';
 import { tokenStore } from '../../services/studentApiService';
 import { CONSTRUCTS, getGrowthInfo, getLevelInfo } from '../../data/diagnosticData';
-import { generateClassPdfReport } from '../../services/pdfReportService';
+import { generateClassPdfReport, generateStudentPdfReport } from '../../services/pdfReportService';
 
 type DashTab = 'classes' | 'stats' | 'grid' | 'table' | 'inbox';
 
@@ -353,8 +353,6 @@ const TeacherDashboard: React.FC = () => {
   );
 };
 
-// generateStudentPdfReport import (테이블 내부에서 사용)
-import { generateStudentPdfReport } from '../../services/pdfReportService';
 
 const ds: Record<string, React.CSSProperties> = {
   root: { display: 'flex', flexDirection: 'column', gap: '14px' },

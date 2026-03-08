@@ -1,9 +1,4 @@
 // src/App.tsx
-// ─────────────────────────────────────────────────────────────────────────────
-// QuestIQ 메인 앱 컴포넌트 (v4 — MongoDB 인증 통합)
-// - AuthProvider로 감싸져 JWT 로그인/로그아웃 상태 전역 관리
-// - 교사 대시보드 탭은 인증 없이도 데모 모드로 접근 가능
-// ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useCallback } from 'react';
 import QuestionInput from './components/QuestionInput';
 import ClassifyResultCard from './components/ClassifyResultCard';
@@ -16,14 +11,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import StudentDiagnosticLink from './pages/StudentDiagnosticLink';
 import { useClassify } from './hooks/useClassify';
-import { apiLogout, tokenStore } from './services/studentApiService';
 import type { Grade, Subject, QuestionHistory } from './types';
 
 type TabId = 'classify' | 'qft' | 'diagnostic' | 'teacher';
 
-// ── 내부 앱 (AuthProvider 하위) ──────────────────────
 const AppInner: React.FC = () => {
-  // URL ?share=XXXXXXXX → 학생 진단 링크 모드
   const shareCode = new URLSearchParams(window.location.search).get('share') || '';
 
   const [activeTab, setActiveTab] = useState<TabId>('classify');
@@ -31,7 +23,19 @@ const AppInner: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const { teacher, isLoggedIn, logout } = useAuth();
 
-  // 공유 링크 모드: 전용 페이지 렌더링
+  // ✅ 훅을 조건문 이전에 항상 호출
+  const {
+    result, loading, error, tokensUsed, elapsedMs,
+    classify, reset, history, clearHistory,
+  } = useClassify();
+
+  const handleHistorySelect = useCallback((_item: QuestionHistory) => {
+    setActiveTab('classify');
+  }, []);
+
+  const isLoading = loading === 'loading';
+
+  // 공유 링크 모드: 전용 페이지 렌더링 (훅 호출 이후에 조건 분기)
   if (shareCode) {
     return (
       <div>
@@ -44,17 +48,6 @@ const AppInner: React.FC = () => {
     );
   }
 
-  const {
-    result, loading, error, tokensUsed, elapsedMs,
-    classify, reset, history, clearHistory,
-  } = useClassify();
-
-  const handleHistorySelect = useCallback((_item: QuestionHistory) => {
-    setActiveTab('classify');
-  }, []);
-
-  const isLoading = loading === 'loading';
-
   const tabs = [
     { id: 'classify'   as TabId, icon: '🔍', label: '질문 분류' },
     { id: 'qft'        as TabId, icon: '🎯', label: 'QFT 세션' },
@@ -62,7 +55,6 @@ const AppInner: React.FC = () => {
     { id: 'teacher'    as TabId, icon: '👩‍🏫', label: '교사 대시보드' },
   ];
 
-  // 로그인 페이지 표시 (teacher 탭이 아닐 때)
   if (showLogin && !isLoggedIn) {
     return (
       <div>
@@ -81,7 +73,6 @@ const AppInner: React.FC = () => {
     <div style={appStyles.root}>
       <style>{globalCSS}</style>
 
-      {/* ── 앱 헤더 ──────────────────────────────── */}
       <header style={appStyles.header}>
         <div style={appStyles.headerContent}>
           <div style={appStyles.logo}>
@@ -93,7 +84,6 @@ const AppInner: React.FC = () => {
           </div>
 
           <div style={appStyles.headerRight}>
-            {/* 인증 상태 표시 */}
             {isLoggedIn && teacher ? (
               <div style={appStyles.authBadge}>
                 <span style={{ fontSize: 14 }}>👩‍🏫</span>
@@ -106,7 +96,6 @@ const AppInner: React.FC = () => {
               </button>
             )}
 
-            {/* 히스토리 버튼 */}
             <button
               onClick={() => setIsHistoryOpen(true)}
               style={appStyles.historyBtn}
@@ -121,7 +110,6 @@ const AppInner: React.FC = () => {
         </div>
       </header>
 
-      {/* ── DB 연동 상태 배너 (로그인 시) ────────── */}
       {isLoggedIn && (
         <div style={appStyles.syncBanner}>
           ✅ MongoDB 연동 중 — 학생 데이터가 실시간으로 DB에 저장됩니다
@@ -129,12 +117,10 @@ const AppInner: React.FC = () => {
         </div>
       )}
 
-      {/* ── 메인 컨텐츠 ──────────────────────────── */}
       <main style={appStyles.main}>
         <div style={appStyles.container}>
           <ApiStatusBanner />
 
-          {/* 탭 네비게이션 */}
           <div style={appStyles.tabBar}>
             {tabs.map((tab) => (
               <button
@@ -157,7 +143,6 @@ const AppInner: React.FC = () => {
             ))}
           </div>
 
-          {/* ══ 탭 1: 단일 질문 분류 ══ */}
           {activeTab === 'classify' && (
             <div style={appStyles.tabContent}>
               <QuestionInput
@@ -191,24 +176,20 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          {/* ══ 탭 2: QFT 세션 ══ */}
           {activeTab === 'qft' && (
             <div style={appStyles.tabContent}>
               <QftSessionPanel qFocusTopic="우리 사회의 불평등" defaultGrade="기타" defaultSubject="사회" />
             </div>
           )}
 
-          {/* ══ 탭 3: 역량 진단 ══ */}
           {activeTab === 'diagnostic' && (
             <div style={appStyles.tabContent}>
               <DiagnosticPage />
             </div>
           )}
 
-          {/* ══ 탭 4: 교사 대시보드 ══ */}
           {activeTab === 'teacher' && (
             <div style={appStyles.tabContent}>
-              {/* 미인증 안내 배너 (데모 모드) */}
               {!isLoggedIn && (
                 <div style={appStyles.demoBanner}>
                   <span>🧪 <strong>데모 모드</strong> — 로그인하면 실제 DB에 학생 데이터가 저장됩니다.</span>
@@ -234,14 +215,12 @@ const AppInner: React.FC = () => {
   );
 };
 
-// ── 루트 App (AuthProvider 감쌈) ─────────────────────
 const App: React.FC = () => (
   <AuthProvider>
     <AppInner />
   </AuthProvider>
 );
 
-// ── 초기 안내 컴포넌트 ────────────────────────────────
 const IntroGuide: React.FC = () => (
   <div style={appStyles.introCard}>
     <div style={appStyles.introTitle}>📖 QuestIQ 사용 방법</div>
@@ -284,7 +263,6 @@ const IntroGuide: React.FC = () => (
   </div>
 );
 
-// ── 전역 CSS ──────────────────────────────────────────
 const globalCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -305,7 +283,6 @@ const globalCSS = `
   button:active { transform: scale(0.97); }
 `;
 
-// ── 스타일 ────────────────────────────────────────────
 const appStyles: Record<string, React.CSSProperties> = {
   root: { minHeight: '100vh', fontFamily: "'Noto Sans KR', sans-serif" },
   header: {
