@@ -14,7 +14,7 @@ import { CONSTRUCTS } from '../data/diagnosticData';
 import {
   apiListStudents, apiCreateStudent, apiUpdateStudent, apiDeleteStudent,
   apiBulkDeleteStudents, apiSaveDiagnosticPre, apiSaveDiagnosticPost,
-  apiSaveAiComment, apiGetClassStats,
+  apiSaveAiComment,
   tokenStore,
 } from '../services/studentApiService';
 

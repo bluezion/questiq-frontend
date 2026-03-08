@@ -59,6 +59,7 @@ async function svgToDataUrl(svgEl: SVGSVGElement, px: number): Promise<string> {
 }
 
 // ── PDF 헬퍼: 텍스트 줄바꿈 ──────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function splitText(text: string, maxChars: number): string[] {
   const words = text.split(' ');
   const lines: string[] = [];

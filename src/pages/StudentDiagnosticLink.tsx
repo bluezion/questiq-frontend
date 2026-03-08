@@ -15,8 +15,8 @@ import {
   type SubmitDiagnosticPayload,
 } from '../services/classApiService';
 import type { PublicClassInfo } from '../types/class';
-import type { DiagnosticResult, ConstructId } from '../types/diagnostic';
-import { useDiagnostic, type AnswerMap } from '../hooks/useDiagnostic';
+import type { ConstructId } from '../types/diagnostic';
+import { useDiagnostic } from '../hooks/useDiagnostic'; // AnswerMap removed (unused)
 import DiagnosticForm from '../components/diagnostic/DiagnosticForm';
 import RadarChart from '../components/diagnostic/RadarChart';
 import { CONSTRUCTS } from '../data/diagnosticData';
