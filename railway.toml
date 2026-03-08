@@ -1,0 +1,11 @@
+# Railway 배포 설정
+# 프론트엔드(React)용
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npx serve -s build -l 3000"
+healthcheckPath = "/"
+healthcheckTimeout = 30
