@@ -1,13 +1,11 @@
-# Railway 배포 설정
-# 프론트엔드(React)용
+# Railway 배포 설정 - Dockerfile 방식으로 전환
+# Nixpacks 의존성 문제 우회
 
 [build]
-builder = "NIXPACKS"
-installCommand = "npm install --legacy-peer-deps"
-buildCommand = "CI=false npm run build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "node_modules/.bin/serve -s build -l ${PORT:-3000}"
 healthcheckPath = "/"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
