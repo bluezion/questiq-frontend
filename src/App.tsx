@@ -10,10 +10,14 @@ import TeacherDashboard from './components/teacher/TeacherDashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import StudentDiagnosticLink from './pages/StudentDiagnosticLink';
+import SeedModePanel from './components/seedmode/SeedModePanel';
+import QuestionTemplatePanel from './components/template/QuestionTemplatePanel';
+import TimeCapsulePanel from './components/timecapsule/TimeCapsulePanel';
+import ClassRankingPanel from './components/ranking/ClassRankingPanel';
 import { useClassify } from './hooks/useClassify';
 import type { Grade, Subject, QuestionHistory } from './types';
 
-type TabId = 'classify' | 'qft' | 'diagnostic' | 'teacher';
+type TabId = 'classify' | 'qft' | 'diagnostic' | 'teacher' | 'seed' | 'template' | 'timecapsule' | 'ranking';
 
 // ── 이론 소개 데이터 ─────────────────────────────────────────────────────────
 interface TheoryInfo {
@@ -172,8 +176,6 @@ const modalStyles: Record<string, React.CSSProperties> = {
 const AppInner: React.FC = () => {
   const shareCode = new URLSearchParams(window.location.search).get('share') || '';
 
-  // 메뉴 순서: 역량 진단 → 질문 분류 → QFT 세션 → 교사 대시보드
-  // (학생 흐름: 진단 먼저 → 질문 분류 연습 → QFT 세션 → 교사가 마지막)
   const [activeTab, setActiveTab] = useState<TabId>('diagnostic');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -197,9 +199,12 @@ const AppInner: React.FC = () => {
     );
   }
 
-  // 메뉴 순서: 역량 진단 → 질문 분류 → QFT 세션 → 교사 대시보드
   const tabs = [
     { id: 'diagnostic' as TabId, icon: '📊', label: '역량 진단' },
+    { id: 'seed'       as TabId, icon: '🌱', label: '씨앗 모드' },
+    { id: 'template'    as TabId, icon: '📋', label: '질문 템플릿' },
+    { id: 'timecapsule' as TabId, icon: '⏳', label: '타임캡슐' },
+    { id: 'ranking'     as TabId, icon: '🏆', label: '클래스 랭킹' },
     { id: 'classify'   as TabId, icon: '🔍', label: '질문 분류' },
     { id: 'qft'        as TabId, icon: '🎯', label: 'QFT 세션' },
     { id: 'teacher'    as TabId, icon: '👩‍🏫', label: '교사 대시보드' },
@@ -227,10 +232,10 @@ const AppInner: React.FC = () => {
       <header style={appStyles.header}>
         <div style={appStyles.headerContent}>
           <div style={appStyles.logo}>
-            <span style={appStyles.logoEmoji}>🎯</span>
+            <span style={appStyles.logoEmoji}>🌱</span>
             <div>
-              <div style={appStyles.logoTitle}>QuestIQ</div>
-              <div style={appStyles.logoSub}>AI 질문 역량 진단 시스템</div>
+              <div style={appStyles.logoTitle}>질문샘</div>
+              <div style={appStyles.logoSub}>질문이 샘솟는 AI 학습 플랫폼</div>
             </div>
           </div>
           <div style={appStyles.headerRight}>
@@ -300,7 +305,7 @@ const AppInner: React.FC = () => {
                   <div style={appStyles.loadingSpinner} />
                   <div>
                     <div style={appStyles.loadingTitle}>🤖 AI가 질문을 분석하고 있어요...</div>
-                    <div style={appStyles.loadingDesc}>Bloom 분류학, 마르자노 연속체, QFT 기준으로 분석 중</div>
+                    <div style={appStyles.loadingDesc}>Bloom 분류학, 마르자노 연속체, QFT 기준으로 분석 중...</div>
                   </div>
                 </div>
               )}
@@ -318,6 +323,34 @@ const AppInner: React.FC = () => {
                 <ClassifyResultCard result={result} onReAnalyze={reset} tokensUsed={tokensUsed} elapsedMs={elapsedMs} />
               )}
               {!result && !isLoading && !error && <IntroGuide onTheoryClick={setActiveTheory} />}
+            </div>
+          )}
+
+          {/* ── 질문 씨앗 모드 탭 ── */}
+          {activeTab === 'seed' && (
+            <div style={appStyles.tabContent}>
+              <SeedModePanel />
+            </div>
+          )}
+
+          {/* ── 주제별 질문 템플릿 탭 ── */}
+          {activeTab === 'template' && (
+            <div style={appStyles.tabContent}>
+              <QuestionTemplatePanel />
+            </div>
+          )}
+
+          {/* ── 질문 타임캡슐 탭 ── */}
+          {activeTab === 'timecapsule' && (
+            <div style={appStyles.tabContent}>
+              <TimeCapsulePanel />
+            </div>
+          )}
+
+          {/* ── 클래스 랭킹 탭 ── */}
+          {activeTab === 'ranking' && (
+            <div style={appStyles.tabContent}>
+              <ClassRankingPanel />
             </div>
           )}
 
@@ -361,7 +394,7 @@ const App: React.FC = () => (
 // ── IntroGuide (이론 카드 클릭 가능) ─────────────────────────────────────────
 const IntroGuide: React.FC<{ onTheoryClick: (t: TheoryInfo) => void }> = ({ onTheoryClick }) => (
   <div style={appStyles.introCard}>
-    <div style={appStyles.introTitle}>📖 QuestIQ 사용 방법</div>
+    <div style={appStyles.introTitle}>📖 질문샘 사용 방법</div>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '12px' }}>
       {[
         { icon: '✍️', step: '1단계', desc: '분석할 질문을 입력하세요' },
@@ -448,14 +481,14 @@ const appStyles: Record<string, React.CSSProperties> = {
   loginBtn: { padding: '8px 14px', background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Noto Sans KR', sans-serif" },
   historyBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '10px', color: '#64748b', cursor: 'pointer', fontSize: '13px', fontWeight: 600, position: 'relative', fontFamily: "'Noto Sans KR', sans-serif", transition: 'all 0.2s' },
   badge: { position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: '#6366f1', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  syncBanner: { background: 'linear-gradient(135deg,#059669,#10b981)', color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '8px' },
+  syncBanner: { background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: '#fff', fontSize: 13, fontWeight: 600, textAlign: 'center', padding: '8px' },
   demoBanner: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 12, padding: '12px 16px', fontSize: 13 },
   demoBannerBtn: { background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Noto Sans KR', sans-serif" },
   backBtn: { background: 'rgba(255,255,255,0.8)', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: "'Noto Sans KR', sans-serif" },
   main: { padding: '24px 20px 60px' },
   container: { maxWidth: '860px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' },
-  tabBar: { display: 'flex', gap: '6px', padding: '4px', background: '#fff', borderRadius: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-  tabBtn: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Noto Sans KR', sans-serif" },
+  tabBar: { display: 'flex', flexWrap: 'nowrap', gap: '6px', padding: '4px', background: '#fff', borderRadius: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } as React.CSSProperties,
+  tabBtn: { flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '9px 12px', borderRadius: '10px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'Noto Sans KR', sans-serif", whiteSpace: 'nowrap' } as React.CSSProperties,
   tabContent: { display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s ease' },
   loadingCard: { display: 'flex', gap: '16px', alignItems: 'center', padding: '24px', background: '#fff', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '2px solid #ede9fe' },
   loadingSpinner: { width: '40px', height: '40px', flexShrink: 0, border: '3px solid #ede9fe', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },

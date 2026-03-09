@@ -23,7 +23,6 @@ ENV SKIP_PREFLIGHT_CHECK=true
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
-# 빌드 시 REACT_APP_API_URL 값 확인 (로그로 확인 가능)
 RUN echo ">>> REACT_APP_API_URL = ${REACT_APP_API_URL}" && \
     npm run build
 
@@ -36,6 +35,8 @@ RUN npm install -g serve
 
 COPY --from=builder /app/build ./build
 
-EXPOSE 3000
+# Railway는 PORT 환경변수를 동적으로 할당함
+# ${PORT:-3000} → PORT가 없으면 3000 사용
+EXPOSE ${PORT:-3000}
 
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["sh", "-c", "serve -s build -l ${PORT:-3000}"]
