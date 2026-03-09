@@ -3,7 +3,8 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && CI=false npm run build"
+installCommand = "npm install --legacy-peer-deps"
+buildCommand = "CI=false npm run build"
 
 [deploy]
 startCommand = "node_modules/.bin/serve -s build -l ${PORT:-3000}"
