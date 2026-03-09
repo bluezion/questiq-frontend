@@ -1,8 +1,8 @@
 {
-  "name": "jilmoonsaem-frontend",
+  "name": "questiq-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "질문샘 - AI 기반 학생 질문 역량 진단 프론트엔드 | 질문이 샘솟는 교실",
+  "description": "QuestIQ - AI 기반 학생 질문 역량 진단 프론트엔드",
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
     "ajv": "8.12.0",
@@ -33,20 +33,10 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+    "extends": ["react-app"]
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   }
 }
