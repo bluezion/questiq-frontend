@@ -1,33 +1,33 @@
-# React 18 + TypeScript 빌드용 Dockerfile
-# ajv v8 강제 설치로 ajv/dist/compile/codegen 오류 해결
-
+# Stage 1: Build
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# package.json만 먼저 복사 (레이어 캐시 활용)
+# package.json만 먼저 복사 (package-lock.json 제외 - fresh install)
 COPY package.json ./
 
-# 클린 설치: overrides로 ajv v8 강제 적용
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# nested overrides가 적용된 fresh install
+RUN npm install --legacy-peer-deps
 
-# 소스 복사
+# 소스 파일 복사
 COPY . .
 
-# 빌드
+# 빌드 환경변수
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
 ENV SKIP_PREFLIGHT_CHECK=true
 ENV DISABLE_ESLINT_PLUGIN=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# 빌드
 RUN npm run build
 
-# 서빙 스테이지 (최소 이미지)
+# Stage 2: Serve
 FROM node:18-alpine AS runner
 
+RUN npm install -g serve
+
 WORKDIR /app
-
-RUN npm install -g serve --no-audit --no-fund
-
 COPY --from=builder /app/build ./build
 
 EXPOSE 3000
