@@ -1,6 +1,3 @@
-# Railway 배포 설정 - Dockerfile 방식으로 전환
-# Nixpacks 의존성 문제 우회
-
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
