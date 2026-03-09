@@ -1,8 +1,8 @@
 # Nixpacks 빌드 설정
-# railway.toml의 installCommand가 적용되지 않는 경우를 대비한 명시적 설정
+# package-lock.json 삭제 후 새로 설치 → 버전 충돌 방지
 
 [phases.install]
-cmds = ["npm install --legacy-peer-deps"]
+cmds = ["rm -f package-lock.json", "npm install --legacy-peer-deps"]
 
 [phases.build]
 cmds = ["CI=false npm run build"]
