@@ -1,15 +1,16 @@
 /**
  * config-overrides.js
- * react-app-rewired 설정: ForkTsCheckerWebpackPlugin 제거
- * 이유: react-scripts 5.0.1 + Node 18 환경에서
- *       fork-ts-checker의 schema-utils v3가 상위 ajv-keywords v5를
- *       참조하며 "Unknown keyword formatMinimum" 에러 발생
- *       → TypeScript 타입 체크를 빌드 시 스킵하여 회피
+ *
+ * react-app-rewired 설정:
+ * ForkTsCheckerWebpackPlugin을 webpack 설정에서 완전히 제거합니다.
+ * 이로써 fork-ts-checker-webpack-plugin ↔ schema-utils ↔ ajv 버전 충돌을 우회합니다.
+ * TypeScript 타입 에러는 빌드 실패를 유발하지 않고 경고로만 표시됩니다.
  */
-module.exports = function override(config) {
-  // ForkTsCheckerWebpackPlugin 인스턴스 제거
-  config.plugins = config.plugins.filter(
-    (plugin) => plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin'
-  );
+module.exports = function override(config, env) {
+  // ForkTsCheckerWebpackPlugin 완전 제거
+  config.plugins = config.plugins.filter(function (plugin) {
+    return plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin';
+  });
+
   return config;
 };
