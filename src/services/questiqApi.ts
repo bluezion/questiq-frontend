@@ -22,10 +22,34 @@ import type {
 } from '../types';
 
 // ── 환경변수 기반 베이스 URL ──────────────────────────
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:3000';
+// 우선순위:
+//   1. 빌드 타임 주입: process.env.REACT_APP_API_URL (Dockerfile ARG)
+//   2. 런타임 주입: window._env_.REACT_APP_API_URL (serve-entrypoint.sh 생성)
+//   3. localhost fallback (개발 환경 전용)
+declare global {
+  interface Window { _env_?: Record<string, string>; }
+}
+
+const BASE_URL: string = (() => {
+  const buildTime = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (buildTime && buildTime !== 'undefined' && buildTime.startsWith('http')) {
+    return buildTime;
+  }
+  // 런타임 주입 (serve-entrypoint.sh 에서 env-config.js 동적 생성)
+  const runtime = (window as Window)._env_?.REACT_APP_API_URL;
+  if (runtime && runtime !== 'undefined' && runtime.startsWith('http')) {
+    return runtime;
+  }
+  // 경고: API URL이 설정되지 않음
+  if (process.env.NODE_ENV === 'production') {
+    console.warn(
+      '[QuestIQ] ⚠ REACT_APP_API_URL이 설정되지 않았습니다.\n' +
+      'Railway Variables 탭에서 REACT_APP_API_URL 을 설정하고 재배포하세요.\n' +
+      '예) https://questiq-backend-production.up.railway.app'
+    );
+  }
+  return 'http://localhost:3000';
+})();
 
 const API_PREFIX = '/api/v1';
 
@@ -147,15 +171,41 @@ export async function getExampleQuestions(): Promise<{
 }
 
 /**
+ * 현재 설정된 API 베이스 URL 반환 (진단용)
+ */
+export function getApiBaseUrl(): string {
+  return BASE_URL;
+}
+
+/**
  * 헬스체크
  * GET /health (루트 레벨)
+ * - localhost 이고 프로덕션 환경이면 즉시 false 반환 (의미없는 요청 방지)
  */
 export async function checkHealth(): Promise<boolean> {
-  try {
-    const { data } = await axios.get(`${BASE_URL}/health`, { timeout: 5000 });
-    return data.status === 'ok';
-  } catch {
+  const isLocalhost = BASE_URL.includes('localhost') || BASE_URL.includes('127.0.0.1');
+  if (isLocalhost && process.env.NODE_ENV === 'production') {
     return false;
+  }
+  try {
+    // /health 엔드포인트 먼저 시도
+    const { data } = await axios.get(`${BASE_URL}/health`, {
+      timeout: 6000,
+      headers: { Accept: 'application/json' },
+    });
+    // { status: 'ok' } 또는 { status: 'healthy' } 모두 허용
+    return data?.status === 'ok' || data?.status === 'healthy' || data?.ok === true;
+  } catch (e1) {
+    // /health 실패 시 루트(/) 또는 /api/v1 에 GET 으로 fallback 확인
+    try {
+      const resp = await axios.get(`${BASE_URL}/api/v1`, {
+        timeout: 6000,
+        validateStatus: (s) => s < 500, // 4xx도 "서버가 살아있음"으로 간주
+      });
+      return resp.status < 500;
+    } catch {
+      return false;
+    }
   }
 }
 
