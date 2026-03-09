@@ -22,34 +22,32 @@ import type {
 } from '../types';
 
 // ── 환경변수 기반 베이스 URL ──────────────────────────
-// 우선순위:
-//   1. 빌드 타임 주입: process.env.REACT_APP_API_URL (Dockerfile ARG)
-//   2. 런타임 주입: window._env_.REACT_APP_API_URL (serve-entrypoint.sh 생성)
-//   3. localhost fallback (개발 환경 전용)
+// Railway Nixpacks 빌드 시 Variables가 ENV로 자동 주입됩니다.
+// process.env.REACT_APP_API_URL 은 CRA 빌드 타임에 번들에 포함됩니다.
 declare global {
   interface Window { _env_?: Record<string, string>; }
 }
 
-const BASE_URL: string = (() => {
-  const buildTime = process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL;
+/**
+ * 현재 유효한 API 베이스 URL을 반환합니다.
+ * 매번 동적으로 읽어 런타임 주입(window._env_)도 반영합니다.
+ */
+export function getApiBaseUrl(): string {
+  // 1순위: CRA 빌드타임 주입 (Railway Nixpacks가 ENV → 빌드 시 포함)
+  const buildTime = process.env.REACT_APP_API_URL;
   if (buildTime && buildTime !== 'undefined' && buildTime.startsWith('http')) {
     return buildTime;
   }
-  // 런타임 주입 (serve-entrypoint.sh 에서 env-config.js 동적 생성)
+  // 2순위: 런타임 주입 (serve-entrypoint.sh → window._env_)
   const runtime = (window as Window)._env_?.REACT_APP_API_URL;
   if (runtime && runtime !== 'undefined' && runtime.startsWith('http')) {
     return runtime;
   }
-  // 경고: API URL이 설정되지 않음
-  if (process.env.NODE_ENV === 'production') {
-    console.warn(
-      '[QuestIQ] ⚠ REACT_APP_API_URL이 설정되지 않았습니다.\n' +
-      'Railway Variables 탭에서 REACT_APP_API_URL 을 설정하고 재배포하세요.\n' +
-      '예) https://questiq-backend-production.up.railway.app'
-    );
-  }
+  // fallback
   return 'http://localhost:3000';
-})();
+}
+
+const BASE_URL = getApiBaseUrl();
 
 const API_PREFIX = '/api/v1';
 
@@ -66,9 +64,12 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: false,
 });
 
-// ── 요청 인터셉터: 인증 토큰 주입 ────────────────────
+// ── 요청 인터셉터: baseURL 동적 갱신 + 인증 토큰 주입 ────────────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // 매 요청마다 최신 API URL 반영 (런타임 주입 대응)
+    config.baseURL = `${getApiBaseUrl()}${API_PREFIX}`;
+
     const token = localStorage.getItem('questiq_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -171,34 +172,29 @@ export async function getExampleQuestions(): Promise<{
 }
 
 /**
- * 현재 설정된 API 베이스 URL 반환 (진단용)
- */
-export function getApiBaseUrl(): string {
-  return BASE_URL;
-}
-
-/**
  * 헬스체크
  * GET /health (루트 레벨)
  * - localhost 이고 프로덕션 환경이면 즉시 false 반환 (의미없는 요청 방지)
  */
 export async function checkHealth(): Promise<boolean> {
-  const isLocalhost = BASE_URL.includes('localhost') || BASE_URL.includes('127.0.0.1');
+  // 매번 최신 URL을 동적으로 읽음 (런타임 주입 반영)
+  const url = getApiBaseUrl();
+  const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
   if (isLocalhost && process.env.NODE_ENV === 'production') {
     return false;
   }
   try {
     // /health 엔드포인트 먼저 시도
-    const { data } = await axios.get(`${BASE_URL}/health`, {
+    const { data } = await axios.get(`${url}/health`, {
       timeout: 6000,
       headers: { Accept: 'application/json' },
     });
     // { status: 'ok' } 또는 { status: 'healthy' } 모두 허용
     return data?.status === 'ok' || data?.status === 'healthy' || data?.ok === true;
   } catch (e1) {
-    // /health 실패 시 루트(/) 또는 /api/v1 에 GET 으로 fallback 확인
+    // /health 실패 시 /api/v1 으로 fallback 확인
     try {
-      const resp = await axios.get(`${BASE_URL}/api/v1`, {
+      const resp = await axios.get(`${url}/api/v1`, {
         timeout: 6000,
         validateStatus: (s) => s < 500, // 4xx도 "서버가 살아있음"으로 간주
       });

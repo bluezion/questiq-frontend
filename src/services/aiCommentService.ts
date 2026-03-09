@@ -7,8 +7,7 @@
 import type { StudentRecord, AiComment } from '../types/teacher';
 import type { ConstructId } from '../types/diagnostic';
 import { CONSTRUCTS, getGrowthInfo, getLevelInfo } from '../data/diagnosticData';
-
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+import { getApiBaseUrl } from './questiqApi';
 
 // ── 진단 데이터 → 자연어 프롬프트 변환 ───────────────
 function buildDiagnosticPrompt(student: StudentRecord): string {
@@ -63,7 +62,7 @@ async function fetchAiCommentFromApi(prompt: string): Promise<{
   summary: string; strengths: string[]; improvements: string[]; nextSteps: string[]; teacherTips: string[];
   model: string; tokensUsed?: number;
 }> {
-  const response = await fetch(`${BASE_URL}/api/v1/classify/improve`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/classify/improve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
