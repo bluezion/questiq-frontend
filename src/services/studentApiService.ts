@@ -7,9 +7,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import type { StudentRecord, ClassStats, AiComment } from '../types/teacher';
 import type { DiagnosticResult } from '../types/diagnostic';
+import { getApiBaseUrl } from './questiqApi';
 
-const BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-const API  = `${BASE}/api/v1`;
+// BASE_URL을 매 요청마다 동적으로 읽어 런타임 주입을 반영합니다.
+const getAPI = () => `${getApiBaseUrl()}/api/v1`;
 
 // ── 로컬 토큰 관리 ────────────────────────────────────
 export const tokenStore = {
@@ -31,7 +32,7 @@ async function apiFetch<T>(
     ...(options.headers as Record<string, string> || {}),
   };
 
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(`${getAPI()}${path}`, {
     ...options,
     headers,
     signal: AbortSignal.timeout(30000),
@@ -62,7 +63,7 @@ async function tryRefreshToken(): Promise<boolean> {
   const token = tokenStore.get();
   if (!token) return false;
   try {
-    const res = await fetch(`${API}/auth/refresh`, {
+    const res = await fetch(`${getAPI()}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),

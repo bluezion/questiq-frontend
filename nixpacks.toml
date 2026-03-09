@@ -1,8 +1,12 @@
 # Nixpacks 빌드 설정
-# package-lock.json 삭제 후 새로 설치 → react-scripts 5.0.1 호환 버전으로 재설치
+# Railway Variables(ENV)가 빌드 시점에 자동으로 주입됩니다.
+# REACT_APP_API_URL 을 Railway Variables 탭에서 설정하면 CRA 빌드에 자동 포함됩니다.
 
 [phases.install]
-cmds = ["rm -f package-lock.json", "npm install --legacy-peer-deps"]
+cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
 cmds = ["CI=false npm run build"]
+
+[start]
+cmd = "npx serve -s build -l 3000"

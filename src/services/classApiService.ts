@@ -5,9 +5,9 @@
 import type { ClassRecord, DiagnosticSubmission, PublicClassInfo, ApproveResult, LinkSettings } from '../types/class';
 import type { DiagnosticResult } from '../types/diagnostic';
 import { tokenStore } from './studentApiService';
+import { getApiBaseUrl } from './questiqApi';
 
-const BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-const API  = `${BASE}/api/v1`;
+const getAPI = () => `${getApiBaseUrl()}/api/v1`;
 
 // ── fetch 래퍼 ────────────────────────────────────────
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -17,7 +17,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string> || {}),
   };
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(`${getAPI()}${path}`, {
     ...options, headers,
     signal: AbortSignal.timeout(30000),
   });
