@@ -4,6 +4,7 @@
   "private": true,
   "description": "QuestIQ - AI 기반 학생 질문 역량 진단 프론트엔드",
   "dependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "7.21.11",
     "axios": "^1.6.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",

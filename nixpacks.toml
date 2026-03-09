@@ -1,5 +1,5 @@
 # Nixpacks 빌드 설정
-# package-lock.json 삭제 후 새로 설치 → 버전 충돌 방지
+# package-lock.json 삭제 후 새로 설치 → react-scripts 5.0.1 호환 버전으로 재설치
 
 [phases.install]
 cmds = ["rm -f package-lock.json", "npm install --legacy-peer-deps"]
